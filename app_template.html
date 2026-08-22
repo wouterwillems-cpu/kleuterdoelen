@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kleuterdoelen – Planning</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --panel:#ffffff; --ink:#1f2733; --muted:#6b7686;
+    --line:#e3e8ef; --brand:#2f6f4f; --brand-d:#235539; --brand-l:#e8f3ec;
+    --go:#7a4fb0; --go-l:#f0e9f8; --min:#2f6f4f; --min-l:#e8f3ec;
+    --warn:#b03a2e; --shadow:0 1px 3px rgba(18,38,63,.08),0 6px 20px rgba(18,38,63,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45}
+  header.app{position:sticky;top:0;z-index:30;background:var(--panel);border-bottom:1px solid var(--line);
+    box-shadow:var(--shadow);padding:12px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  header.app h1{font-size:18px;margin:0;font-weight:700;display:flex;align-items:center;gap:10px}
+  header.app h1 .dot{width:12px;height:12px;border-radius:50%;background:var(--brand)}
+  header.app .sub{color:var(--muted);font-size:12px;margin-left:2px}
+  .spacer{flex:1}
+  .btn{appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink);
+    padding:8px 14px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;
+    display:inline-flex;align-items:center;gap:7px;transition:.12s}
+  .btn:hover{background:#f7f9fc;border-color:#cfd7e2}
+  .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+  .btn.primary:hover{background:var(--brand-d)}
+  .btn.ghost{background:transparent;border-color:transparent}
+  .btn.ghost:hover{background:#eef1f6}
+  .btn.sm{padding:5px 10px;font-size:12px}
+  .btn.danger{color:var(--warn)}
+  main{max-width:1500px;margin:0 auto;padding:20px}
+  .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  .meta input{border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px;font-family:inherit}
+  .count-pill{background:#eef1f6;color:var(--muted);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600}
+
+  table.plan{width:100%;border-collapse:separate;border-spacing:0;background:var(--panel);
+    border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+  table.plan thead th{background:#fbfcfe;text-align:left;font-size:11.5px;letter-spacing:.04em;
+    text-transform:uppercase;color:var(--muted);padding:11px 12px;border-bottom:1px solid var(--line);font-weight:700}
+  table.plan tbody td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.plan tbody tr:last-child td{border-bottom:none}
+  table.plan tbody tr:hover{background:#fcfdff}
+  col.c-klas{width:78px}col.c-periode{width:150px}col.c-thema{width:170px}
+  col.c-min{width:30%}col.c-go{width:30%}col.c-act{width:54px}
+
+  select.klas,input.cell{width:100%;border:1px solid var(--line);border-radius:8px;padding:7px 8px;
+    font-size:13px;font-family:inherit;background:#fff}
+  select.klas{font-weight:700;color:var(--brand-d)}
+  textarea.cell{width:100%;border:1px solid var(--line);border-radius:8px;padding:7px 8px;font-size:13px;
+    font-family:inherit;resize:vertical;min-height:38px}
+
+  .chips{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+  .chip{display:flex;gap:8px;align-items:flex-start;background:#f6f8fb;border:1px solid var(--line);
+    border-radius:9px;padding:6px 8px;font-size:12.5px;position:relative}
+  .chip.min{background:var(--min-l);border-color:#cfe6d8}
+  .chip.go{background:var(--go-l);border-color:#e0d3f0}
+  .chip .tag{font-size:10px;font-weight:800;letter-spacing:.03em;padding:1px 6px;border-radius:5px;
+    white-space:nowrap;flex:none;margin-top:1px}
+  .chip.min .tag{background:var(--min);color:#fff}
+  .chip.go .tag{background:var(--go);color:#fff}
+  .chip .txt{flex:1}
+  .chip .txt b{display:block;font-weight:700;font-size:11px;color:var(--muted);margin-bottom:1px}
+  .chip .x{flex:none;border:none;background:transparent;cursor:pointer;color:var(--muted);
+    font-size:15px;line-height:1;padding:0 2px}
+  .chip .x:hover{color:var(--warn)}
+  .add-doel{font-size:12px}
+  .empty-cell{color:var(--muted);font-style:italic;font-size:12px;margin-bottom:8px}
+
+  .rowact{display:flex;flex-direction:column;gap:4px;align-items:center}
+  .iconbtn{border:none;background:transparent;cursor:pointer;color:var(--muted);font-size:15px;
+    padding:4px;border-radius:6px;line-height:1}
+  .iconbtn:hover{background:#eef1f6;color:var(--ink)}
+  .iconbtn.del:hover{color:var(--warn);background:#fdeceb}
+
+  .empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+  .empty-state h2{color:var(--ink);font-weight:700;margin:0 0 6px}
+
+  /* modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(18,30,45,.45);display:flex;align-items:center;
+    justify-content:center;z-index:100;padding:24px}
+  .modal{background:#fff;border-radius:16px;width:min(820px,100%);max-height:90vh;display:flex;
+    flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden}
+  .modal header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+  .modal header h3{margin:0;font-size:16px;flex:1}
+  .modal header .badge{font-size:11px;font-weight:800;padding:3px 9px;border-radius:6px;color:#fff}
+  .modal .controls{padding:12px 20px;border-bottom:1px solid var(--line);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .modal select,.modal .search{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit}
+  .modal .search{flex:1;min-width:160px}
+  .modal .body{overflow-y:auto;padding:8px 20px 16px}
+  .ond-group{margin-top:14px}
+  .ond-group>h4{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);
+    margin:0 0 6px;padding-bottom:5px;border-bottom:1px solid var(--line)}
+  .doel-item{display:flex;gap:10px;align-items:flex-start;padding:7px 6px;border-radius:8px;cursor:pointer}
+  .doel-item:hover{background:#f6f8fb}
+  .doel-item input{margin-top:3px;flex:none;width:16px;height:16px;accent-color:var(--brand)}
+  .doel-item .di-txt{flex:1;font-size:13px}
+  .doel-item .di-num{font-size:11px;font-weight:700;color:var(--muted);margin-right:6px}
+  .doel-item .di-detail{display:block;color:var(--muted);font-size:11.5px;margin-top:2px;white-space:pre-line}
+  .doel-item .di-age{display:inline-block;font-size:10px;background:#eef1f6;color:var(--muted);
+    border-radius:4px;padding:0 5px;margin-left:6px}
+  .doel-item.used{background:var(--brand-l);border:1px solid #bfe0cc}
+  .doel-item.used:hover{background:#dcefe3}
+  .doel-item.used input{accent-color:var(--brand)}
+  .di-used-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.02em;
+    background:var(--brand);color:#fff;border-radius:4px;padding:0 6px;margin-left:6px;vertical-align:1px}
+  .pk-notice{font-size:12px;color:var(--muted);background:#fbfcfe;border:1px solid var(--line);
+    border-radius:8px;padding:7px 10px;margin:2px 0 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%}
+  .pk-notice b{color:var(--ink)}
+  .pk-toggle{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink);cursor:pointer;white-space:nowrap}
+  .pk-toggle input{width:15px;height:15px;accent-color:var(--brand)}
+  .klas-pill{display:inline-block;font-weight:800;color:var(--brand-d);background:var(--brand-l);
+    border:1px solid #cfe6d8;border-radius:6px;padding:1px 8px}
+  .modal footer{padding:12px 20px;border-top:1px solid var(--line);display:flex;align-items:center;gap:10px}
+  .modal footer .selinfo{flex:1;color:var(--muted);font-size:12px}
+  .hidden{display:none!important}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;
+    padding:11px 18px;border-radius:10px;font-size:13px;z-index:200;box-shadow:var(--shadow);opacity:0;
+    transition:opacity .2s,transform .2s;pointer-events:none}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
+
+  @media print{
+    header.app,.toolbar,.rowact,.add-doel,col.c-act,.chip .x{display:none!important}
+    body{background:#fff}main{padding:0;max-width:none}
+    table.plan{box-shadow:none;border:1px solid #bbb}
+    .chip{background:#fff!important}
+  }
+</style>
+</head>
+<body>
+<header class="app">
+  <h1><span class="dot"></span> Kleuterdoelen <span class="sub">planning &amp; voortgang</span></h1>
+  <div class="spacer"></div>
+  <button class="btn" id="btnImport">⬆︎ Importeer JSON</button>
+  <button class="btn" id="btnExport">⬇︎ Exporteer JSON</button>
+  <button class="btn" id="btnPrint">🖨︎ Afdrukken</button>
+  <input type="file" id="fileInput" accept="application/json,.json" class="hidden">
+</header>
+
+<main>
+  <div class="toolbar">
+    <span class="meta"><input id="planTitle" placeholder="Naam van deze planning (bv. Juf An – K2 – 2025-2026)"></span>
+    <button class="btn primary" id="btnAddRow">+ Nieuwe rij</button>
+    <div class="spacer"></div>
+    <span class="count-pill" id="rowCount">0 rijen</span>
+    <button class="btn ghost danger sm" id="btnClear">Alles wissen</button>
+  </div>
+
+  <table class="plan">
+    <colgroup>
+      <col class="c-klas"><col class="c-periode"><col class="c-thema">
+      <col class="c-min"><col class="c-go"><col class="c-act">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Klas</th><th>Periode</th><th>Thema</th>
+        <th>Minimumdoelen</th><th>GO!-doelen</th><th></th>
+      </tr>
+    </thead>
+    <tbody id="planBody"></tbody>
+  </table>
+
+  <div class="empty-state hidden" id="emptyState">
+    <h2>Nog geen rijen</h2>
+    <p>Klik op <b>+ Nieuwe rij</b> om je eerste planning toe te voegen, of importeer een bestaande JSON.</p>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DB = __DB__;
+const KLASSEN = ["K1","K2","K3"];
+
+/* ---- index doelen voor snelle lookup op id ---- */
+const DOEL_INDEX = {}; // id -> {type, vak, vakcode, onderdeel, ...}
+for(const v of DB.vakken){
+  for(const o of v.onderdelen){
+    for(const m of o.minimumdoelen){
+      DOEL_INDEX[m.id] = {type:'min', vak:v.naam, vakcode:v.code, onderdeel:o.naam,
+        nummer:m.nummer, tekst:m.tekst, detail:m.detail};
+    }
+    for(const g of o.go_doelen){
+      DOEL_INDEX[g.id] = {type:'go', vak:v.naam, vakcode:v.code, onderdeel:o.naam,
+        nummer:(g.go_nrs||[]).join(', '), tekst:g.tekst, leeftijden:g.leeftijden};
+    }
+  }
+}
+
+/* ---- state ---- */
+let state = { title:"", rows:[] };
+const LS_KEY = "kleuterdoelen_planning_v1";
+function newRow(){ return { id:crypto.randomUUID(), klas:"K1", periode:"", thema:"", min:[], go:[] }; }
+
+function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){} }
+function load(){
+  try{ const s=localStorage.getItem(LS_KEY); if(s){ state=JSON.parse(s); } }catch(e){}
+  if(!state.rows) state.rows=[];
+}
+
+/* ---- render ---- */
+const body = document.getElementById('planBody');
+const empty = document.getElementById('emptyState');
+function render(){
+  body.innerHTML="";
+  document.getElementById('planTitle').value = state.title||"";
+  document.getElementById('rowCount').textContent = state.rows.length + (state.rows.length===1?" rij":" rijen");
+  empty.classList.toggle('hidden', state.rows.length>0);
+  state.rows.forEach((row,idx)=>{
+    const tr=document.createElement('tr');
+
+    // Klas
+    const tdK=document.createElement('td');
+    const sel=document.createElement('select'); sel.className='klas';
+    KLASSEN.forEach(k=>{const op=document.createElement('option');op.value=k;op.textContent=k;
+      if(row.klas===k)op.selected=true;sel.appendChild(op);});
+    sel.onchange=()=>{row.klas=sel.value;save();};
+    tdK.appendChild(sel); tr.appendChild(tdK);
+
+    // Periode
+    const tdP=document.createElement('td');
+    const ip=document.createElement('input'); ip.className='cell'; ip.placeholder='bv. Sept–Okt';
+    ip.value=row.periode||""; ip.oninput=()=>{row.periode=ip.value;save();};
+    tdP.appendChild(ip); tr.appendChild(tdP);
+
+    // Thema
+    const tdT=document.createElement('td');
+    const it=document.createElement('textarea'); it.className='cell'; it.placeholder='bv. Herfst';
+    it.value=row.thema||""; it.oninput=()=>{row.thema=it.value;save();};
+    tdT.appendChild(it); tr.appendChild(tdT);
+
+    // Minimumdoelen
+    tr.appendChild(doelCell(row,'min'));
+    // GO doelen
+    tr.appendChild(doelCell(row,'go'));
+
+    // Acties
+    const tdA=document.createElement('td');
+    const act=document.createElement('div'); act.className='rowact';
+    const up=icon('▲','Omhoog'); up.onclick=()=>moveRow(idx,-1);
+    const dn=icon('▼','Omlaag'); dn.onclick=()=>moveRow(idx,1);
+    const dup=icon('⧉','Dupliceren'); dup.onclick=()=>dupRow(idx);
+    const del=icon('🗑','Verwijderen'); del.className='iconbtn del'; del.onclick=()=>delRow(idx);
+    act.append(up,dn,dup,del); tdA.appendChild(act); tr.appendChild(tdA);
+
+    body.appendChild(tr);
+  });
+}
+function icon(t,title){const b=document.createElement('button');b.className='iconbtn';b.textContent=t;b.title=title;return b;}
+
+function doelCell(row,type){
+  const td=document.createElement('td');
+  const list=row[type];
+  const chips=document.createElement('div'); chips.className='chips';
+  if(list.length===0){
+    const e=document.createElement('div'); e.className='empty-cell';
+    e.textContent = type==='min' ? 'Geen minimumdoelen gekozen' : 'Geen GO!-doelen gekozen';
+    chips.appendChild(e);
+  }
+  list.forEach(id=>{
+    const d=DOEL_INDEX[id];
+    const chip=document.createElement('div'); chip.className='chip '+type;
+    const tag=document.createElement('span'); tag.className='tag';
+    tag.textContent = d ? d.vak : '?';
+    const txt=document.createElement('div'); txt.className='txt';
+    if(d){
+      const head=document.createElement('b');
+      head.textContent = (d.nummer?d.nummer+' · ':'') + d.onderdeel;
+      txt.appendChild(head);
+      txt.appendChild(document.createTextNode(d.tekst));
+    }else{ txt.textContent='(onbekend doel: '+id+')'; }
+    const x=document.createElement('button'); x.className='x'; x.textContent='×'; x.title='Verwijderen';
+    x.onclick=()=>{row[type]=row[type].filter(i=>i!==id);save();render();};
+    chip.append(tag,txt,x); chips.appendChild(chip);
+  });
+  td.appendChild(chips);
+  const add=document.createElement('button'); add.className='btn ghost sm add-doel';
+  add.textContent = type==='min' ? '+ Kies minimumdoelen' : '+ Kies GO!-doelen';
+  add.style.color = type==='min' ? 'var(--min)' : 'var(--go)';
+  add.onclick=()=>openPicker(row,type);
+  td.appendChild(add);
+  return td;
+}
+
+function moveRow(i,dir){const j=i+dir;if(j<0||j>=state.rows.length)return;
+  [state.rows[i],state.rows[j]]=[state.rows[j],state.rows[i]];save();render();}
+function dupRow(i){const c=JSON.parse(JSON.stringify(state.rows[i]));c.id=crypto.randomUUID();
+  state.rows.splice(i+1,0,c);save();render();}
+function delRow(i){if(confirm('Deze rij verwijderen?')){state.rows.splice(i,1);save();render();}}
+
+/* ---- picker modal ---- */
+let pickerCtx=null;
+const KLAS_LEEFTIJD={K1:'3-4',K2:'4-5',K3:'5-6'};
+function openPicker(row,type){
+  // gekozen minimumdoel-nummers van DEZE rij, per vak (voor GO!-filter)
+  const selMinNumsByVak={};
+  (row.min||[]).forEach(id=>{const d=DOEL_INDEX[id];
+    if(d){(selMinNumsByVak[d.vakcode]=selMinNumsByVak[d.vakcode]||new Set()).add(d.nummer);}});
+  // alle doelen die ergens in de hele planning al gebruikt zijn (van dit type)
+  const usedIds=new Set();
+  state.rows.forEach(r=>(r[type]||[]).forEach(id=>usedIds.add(id)));
+  pickerCtx={row,type,selected:new Set(row[type]),
+    klasAge:KLAS_LEEFTIJD[row.klas]||null, selMinNumsByVak, usedIds, showAll:false};
+  buildPicker();
+}
+function buildPicker(){
+  const {type}=pickerCtx;
+  const bg=document.createElement('div'); bg.className='modal-bg'; bg.id='pickerBg';
+  const isMin=type==='min';
+  const accent=isMin?'var(--min)':'var(--go)';
+  bg.innerHTML=`
+   <div class="modal">
+     <header>
+       <span class="badge" style="background:${accent}">${isMin?'MINIMUMDOELEN':'GO!-DOELEN'}</span>
+       <h3>Doelen kiezen</h3>
+       <button class="btn ghost" id="pkClose">✕</button>
+     </header>
+     <div class="controls">
+       <select id="pkVak"></select>
+       <input class="search" id="pkSearch" placeholder="Zoek in doelen…">
+       <div class="pk-notice" id="pkFilterNotice"></div>
+     </div>
+     <div class="body" id="pkBody"></div>
+     <footer>
+       <span class="selinfo" id="pkInfo"></span>
+       <button class="btn" id="pkCancel">Annuleren</button>
+       <button class="btn primary" id="pkOk">Klaar</button>
+     </footer>
+   </div>`;
+  document.body.appendChild(bg);
+  const vakSel=bg.querySelector('#pkVak');
+  // only show vakken that have this type
+  DB.vakken.forEach(v=>{
+    const has = v.onderdelen.some(o=> (isMin?o.minimumdoelen:o.go_doelen).length>0);
+    if(!has) return;
+    const op=document.createElement('option');op.value=v.code;op.textContent=v.naam;vakSel.appendChild(op);
+  });
+  // restore last vak
+  if(pickerCtx.lastVak) vakSel.value=pickerCtx.lastVak;
+  const search=bg.querySelector('#pkSearch');
+  function updateNotice(){
+    const el=bg.querySelector('#pkFilterNotice'); if(!el) return;
+    const vakcode=vakSel.value;
+    const klas=pickerCtx.row.klas, age=pickerCtx.klasAge;
+    let parts=[`Gefilterd op <span class="klas-pill">${klas}</span> (${age} jr)`];
+    if(!isMin){
+      const selNums=pickerCtx.selMinNumsByVak[vakcode];
+      if(selNums&&selNums.size) parts.push(`en <b>${selNums.size} gekozen minimumdoel(en)</b>`);
+      else parts.push(`— <i>kies eerst minimumdoelen om verder te verfijnen</i>`);
+    }
+    el.innerHTML=`<span>${parts.join(' ')}</span>
+      <label class="pk-toggle" style="margin-left:auto">
+        <input type="checkbox" id="pkShowAll" ${pickerCtx.showAll?'checked':''}> Toon alle doelen (filters negeren)
+      </label>`;
+    el.querySelector('#pkShowAll').onchange=e=>{pickerCtx.showAll=e.target.checked;rb();};
+  }
+  function rb(){updateNotice();renderPickerBody(bg,vakSel.value,search.value);}
+  vakSel.onchange=()=>{pickerCtx.lastVak=vakSel.value;rb();};
+  search.oninput=rb;
+  bg.querySelector('#pkClose').onclick=closePicker;
+  bg.querySelector('#pkCancel').onclick=closePicker;
+  bg.querySelector('#pkOk').onclick=()=>{
+    pickerCtx.row[pickerCtx.type]=Array.from(pickerCtx.selected);
+    closePicker();save();render();
+  };
+  bg.onclick=e=>{if(e.target===bg)closePicker();};
+  rb(); updateInfo(bg);
+  setTimeout(()=>search.focus(),50);
+}
+function closePicker(){const bg=document.getElementById('pickerBg');if(bg)bg.remove();}
+function updateInfo(bg){
+  bg.querySelector('#pkInfo').textContent = pickerCtx.selected.size+' doel(en) geselecteerd in deze rij';
+}
+function renderPickerBody(bg,vakcode,q){
+  const {type,selected,usedIds,klasAge,showAll}=pickerCtx; const isMin=type==='min';
+  const vak=DB.vakken.find(v=>v.code===vakcode);
+  const body=bg.querySelector('#pkBody'); body.innerHTML="";
+  const ql=(q||"").trim().toLowerCase();
+  const selNums = isMin ? null : pickerCtx.selMinNumsByVak[vakcode];
+  let shown=0, hiddenByFilter=0;
+  vak.onderdelen.forEach(o=>{
+    const items=(isMin?o.minimumdoelen:o.go_doelen).filter(d=>{
+      // zoekfilter
+      if(ql){
+        const num=isMin?d.nummer:(d.go_nrs||[]).join(' ');
+        if(!((d.tekst||'').toLowerCase().includes(ql)||(num||'').toLowerCase().includes(ql))) return false;
+      }
+      // klas-/minimumdoel-filter, tenzij 'toon alle'
+      if(!showAll){
+        // klas (leeftijd): toon als leeftijd onbekend of past bij de klas
+        if(klasAge && d.leeftijden && d.leeftijden.length && !d.leeftijden.includes(klasAge)){
+          hiddenByFilter++; return false;
+        }
+        // minimumdoel-koppeling: enkel voor GO!-doelen, en enkel als er
+        // minimumdoelen van dit vak gekozen zijn in de rij
+        if(!isMin && selNums && selNums.size){
+          const refs=d.min_refs||[];
+          if(!refs.some(r=>selNums.has(r))){ hiddenByFilter++; return false; }
+        }
+      }
+      return true;
+    });
+    if(items.length===0)return;
+    const g=document.createElement('div'); g.className='ond-group';
+    const h=document.createElement('h4'); h.textContent=o.naam; g.appendChild(h);
+    items.forEach(d=>{
+      shown++;
+      const lab=document.createElement('label'); lab.className='doel-item';
+      const isUsed = usedIds.has(d.id) || selected.has(d.id);
+      if(isUsed) lab.classList.add('used');
+      const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=selected.has(d.id);
+      cb.onchange=()=>{
+        if(cb.checked){selected.add(d.id);lab.classList.add('used');}
+        else{selected.delete(d.id); if(!usedIds.has(d.id)) lab.classList.remove('used');}
+        updateInfo(bg);
+      };
+      const txt=document.createElement('div'); txt.className='di-txt';
+      const num=isMin?d.nummer:(d.go_nrs||[]).join(', ');
+      const numS=document.createElement('span'); numS.className='di-num'; numS.textContent=num||'';
+      txt.appendChild(numS);
+      txt.appendChild(document.createTextNode(d.tekst));
+      if(d.leeftijden && d.leeftijden.length){
+        const a=document.createElement('span');a.className='di-age';a.textContent=d.leeftijden.join(' / ')+' jr';
+        txt.appendChild(a);
+      }
+      if(isUsed){
+        const u=document.createElement('span');u.className='di-used-tag';u.textContent='AL GEKOZEN';txt.appendChild(u);
+      }
+      if(isMin && d.detail){
+        const dt=document.createElement('span');dt.className='di-detail';dt.textContent=d.detail;txt.appendChild(dt);
+      }
+      lab.append(cb,txt); g.appendChild(lab);
+    });
+    body.appendChild(g);
+  });
+  if(shown===0){
+    const e=document.createElement('div');e.className='empty-cell';e.style.padding='24px 0';
+    if(hiddenByFilter>0 && !showAll){
+      e.innerHTML='Geen doelen die passen bij de'+(isMin?' klas':' klas/minimumdoel')+'-filter'+(ql?' en "'+q+'"':'')+
+        '.<br>Zet <b>“Toon alle doelen”</b> aan om alle doelen te zien.';
+    }else{
+      e.textContent='Geen doelen gevonden'+(ql?' voor "'+q+'"':'')+'.';
+    }
+    body.appendChild(e);
+  }
+}
+
+/* ---- toolbar actions ---- */
+document.getElementById('btnAddRow').onclick=()=>{state.rows.push(newRow());save();render();
+  window.scrollTo(0,document.body.scrollHeight);};
+document.getElementById('planTitle').oninput=e=>{state.title=e.target.value;save();};
+document.getElementById('btnClear').onclick=()=>{
+  if(confirm('Alle rijen wissen? Dit kan niet ongedaan gemaakt worden (exporteer eerst indien nodig).')){
+    state={title:state.title,rows:[]};save();render();}
+};
+document.getElementById('btnPrint').onclick=()=>window.print();
+
+document.getElementById('btnExport').onclick=()=>{
+  const data={app:"kleuterdoelen-planning",versie:1,geexporteerd:new Date().toISOString(),
+    title:state.title,rows:state.rows};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  const safe=(state.title||'planning').replace(/[^a-z0-9]+/gi,'_').replace(/^_+|_+$/g,'').toLowerCase()||'planning';
+  a.href=URL.createObjectURL(blob); a.download='kleuterdoelen_'+safe+'.json'; a.click();
+  URL.revokeObjectURL(a.href); toast('Geëxporteerd ✓');
+};
+document.getElementById('btnImport').onclick=()=>document.getElementById('fileInput').click();
+document.getElementById('fileInput').onchange=e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const d=JSON.parse(r.result);
+      const rows=Array.isArray(d.rows)?d.rows:(Array.isArray(d)?d:null);
+      if(!rows) throw new Error('Geen geldige planning (rows ontbreekt).');
+      const clean=rows.map(x=>({
+        id:x.id||crypto.randomUUID(),
+        klas:KLASSEN.includes(x.klas)?x.klas:'K1',
+        periode:x.periode||'',thema:x.thema||'',
+        min:Array.isArray(x.min)?x.min:[],go:Array.isArray(x.go)?x.go:[]
+      }));
+      if(state.rows.length>0 && !confirm('Huidige planning vervangen door geïmporteerde planning?\n(Annuleer om de rijen toe te voegen i.p.v. vervangen.)')){
+        state.rows=state.rows.concat(clean);
+      }else{
+        state.title=d.title||state.title; state.rows=clean;
+      }
+      save();render();toast('Geïmporteerd ✓ ('+clean.length+' rijen)');
+    }catch(err){alert('Importeren mislukt: '+err.message);}
+    e.target.value='';
+  };
+  r.readAsText(f);
+};
+
+let toastT;
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
+
+/* ---- init ---- */
+load();
+if(state.rows.length===0) state.rows.push(newRow());
+render();
+</script>
+</body>
+</html>
